@@ -5,9 +5,9 @@ import time
 
 
 class MyThread(threading.Thread):
-    def __init__(self, threadID, name, delay):
+    def __init__(self, threadid, name, delay):
         threading.Thread.__init__(self)
-        self.threadID = threadID
+        self.threadID = threadid
         self.name = name
         self.delay = delay
 
@@ -27,8 +27,9 @@ def print_time(threadname, delay, counter):
         counter -= 1
 
 
+threadLock = threading.Lock()
+
 if __name__ == '__main__':
-    threadLock = threading.Lock()
     threads = []
 
     # 创建新线程
