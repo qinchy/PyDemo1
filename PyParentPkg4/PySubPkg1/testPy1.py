@@ -3,7 +3,7 @@ import unittest
 import PyStub1
 
 
-class MyTestCase(unittest.TestCase):
+class TestCasePy1(unittest.TestCase):
     """MyTestCase是unitest.TestCase的派生类"""
 
     def test_something(self):

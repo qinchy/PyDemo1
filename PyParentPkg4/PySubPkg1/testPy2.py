@@ -5,6 +5,7 @@ class TestStringMethods(unittest.TestCase):
     """自定义测试用例"""
 
     def test_upper(self):
+        print('aaaa')
         self.assertEqual('foo'.upper(), 'FOO')
 
     def test_isupper(self):

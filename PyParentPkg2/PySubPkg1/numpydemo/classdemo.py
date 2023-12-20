@@ -17,6 +17,7 @@ class Vector:
         print(f"Vector({self.a},{self.b})已被删除")
 
     def param(self, *args, **kwargs):
+        """args是函数的可变参数，kwargs是函数的关键字(keyword)可变参数"""
         print(self)
 
         print(type(args))
