@@ -12,6 +12,6 @@ print(path)
 # dir(os)
 # help(os)
 
-shutil.copyfile('./PyModule1/stdlib.py', './PyModule1/stdlib2.py')
+shutil.copyfile('./PyParentPkg2/stdlib.py', './PyParentPkg2/stdlib2.py')
 
 glob.glob('*.py')
