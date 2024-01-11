@@ -1,4 +1,5 @@
 import random
+import PyModule1
 
 if __name__ == '__main__':
     print("==获取[0-1]中的一个浮点数==")
@@ -23,3 +24,6 @@ if __name__ == '__main__':
     for i in range(10):
         random_between_5_and_10 = random.randint(5, 10)
         print(random_between_5_and_10, type(random_between_5_and_10))
+
+    tradeData = PyModule1.TradeData('000001', 20, 'BUY', 20)
+    print(tradeData)
