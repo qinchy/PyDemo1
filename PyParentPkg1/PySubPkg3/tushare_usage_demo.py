@@ -1,7 +1,7 @@
 import tushare as ts
 
 if __name__ == '__main__':
-    token = '32e73e8ad4c40ba77adebc92cad7d94147e78c4a82c5e49cdacdd2c9'
+    token = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
     pro = ts.pro_api(token)
 
     data = pro.query('stock_basic', exchange='', list_status='L',
