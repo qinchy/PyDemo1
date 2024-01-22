@@ -20,6 +20,7 @@ if __name__ == '__main__':
     # 计算策略信号
     data['Signal'] = 0
     # 以涨幅为信号，可根据需要修改条件
+    # loc[n]函数的含义是返回第n条记录
     data.loc[data['Daily_Return'] > 0, 'Signal'] = 1
 
     # 计算策略收益
