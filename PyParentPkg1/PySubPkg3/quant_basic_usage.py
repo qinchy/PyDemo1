@@ -48,13 +48,18 @@ def calc_increase_percent(stock_dict):
         open_close_price_tuple_list)
     # 这里得用list包装一下再打印，否则打印出内存地址
     full_increase_list = list(increase_list)
-    full_increase_list.insert(0,0)
+    full_increase_list.insert(0, 0)
     print(full_increase_list)
 
     stock_namedtuple = namedtuple('stock', ('riqi', 'price', 'increase'))
     stock_dict_new = OrderedDict((riqi, stock_namedtuple(riqi, price, increase)) for riqi, price, increase in
                                  zip(stock_dict.keys(), price_float_list, full_increase_list))
     print(stock_dict_new)
+    for value in stock_dict_new.values():
+        print(value.increase)
+    print("过滤下跌的股票数据后：")
+    data = list(filter(lambda value: value.increase > 0, stock_dict_new.values()))
+    print(data)
 
 
 def calc_square():
