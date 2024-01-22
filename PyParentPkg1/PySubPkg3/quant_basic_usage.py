@@ -61,6 +61,43 @@ def calc_increase_percent(stock_dict):
     data = list(filter(lambda value: value.increase > 0, stock_dict_new.values()))
     print(data)
 
+    # 也可以调用函数实现，只保留上涨，不计算累计
+    print("只保留上涨，不计算累计")
+    data, increase_sum = filter_stock(stock_dict_new)
+    print(list(data))
+    print(increase_sum)
+
+    # 也可以调用函数实现，只保留下跌，不计算累计
+    print("只保留下跌，不计算累计")
+    data, increase_sum = filter_stock(stock_dict_new, want_up=False)
+    print(list(data))
+    print(increase_sum)
+
+    # 也可以调用函数实现，只保留下跌，不计算累计
+    print("只保留下跌，要计算累计")
+    data, increase_sum = filter_stock(stock_dict_new, want_up=False, want_calc_sum=True)
+    print(list(data))
+    print(increase_sum)
+
+
+def filter_stock(stock_array_dict, want_up=True, want_calc_sum=False):
+    """根据条件过滤数据"""
+    if not isinstance(stock_array_dict, OrderedDict):
+        raise TypeError('stock_array_dict must be OrderedDict!')
+
+    filter_func = (lambda day: day.increase > 0) \
+        if want_up else (lambda day: day.increase < 0)
+    want_days = filter(filter_func, stock_array_dict.values())
+
+    if not want_calc_sum:
+        return want_days, 0
+
+    # 需要计算涨跌幅和
+    increase_sum = 0.0
+    for day in want_days:
+        increase_sum += day.increase
+    return want_days, increase_sum
+
 
 def calc_square():
     """使用 lambda 匿名函数计算平方数"""
@@ -129,6 +166,11 @@ if __name__ == '__main__':
     # 计算上涨百分比
     if callable(calc_increase_percent):
         calc_increase_percent(stock_ordered_dict)
+
+    # 只需要上涨数据，不计算汇总
+    # if callable(calc_increase_percent):
+    #     data = list(filter_stock(stock_ordered_dict))
+    #     print(data)
 
     # 计算平方
     if callable(calc_square):
