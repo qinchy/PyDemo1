@@ -1,6 +1,7 @@
 import datetime
 from collections import namedtuple
 from collections import OrderedDict
+from functools import reduce
 
 
 class DatePrice:
@@ -26,6 +27,40 @@ def find_max_and_min(stock_dict):
     sorted_stock_price = sorted(zip(stock_dict.values(), stock_dict.keys()))
     # sorted是按升序排序的，故-1为最大值索引，0为最小值索引
     return sorted_stock_price[-1], sorted_stock_price[0]
+
+
+def calc_increase_percent(stock_dict):
+    """通过收盘价计算每天涨跌幅"""
+    # 将字符串的价格通过列表推导式显式转换为float类型
+    # 由于stock_dict是OrderedDict，所以才可以直接使用stock_dict.values()获取有序日期的收盘价格
+    price_float_list = [float(price_str) for price_str in stock_dict.values()]
+    open_close_price_tuple_list = [(openPrice, closePrice) for openPrice, closePrice in
+                                   zip(price_float_list[:-1], price_float_list[1:])]
+    print(open_close_price_tuple_list)
+    # 普通写法
+    for (openPrice, closePrice) in open_close_price_tuple_list:
+        increse = str(round((closePrice - openPrice) / openPrice, 3) * 100) + "%"
+        print(f"{openPrice} -> {closePrice}, 上涨了{increse}")
+
+    # 用map，reduce高阶写法代替上面普通写法
+    increase_list = map(
+        lambda open_close_price_tuple: reduce(lambda a, b: round((b - a) / a, 3), open_close_price_tuple),
+        open_close_price_tuple_list)
+    # 这里得用list包装一下再打印，否则打印出内存地址
+    full_increase_list = list(increase_list)
+    full_increase_list.insert(0,0)
+    print(full_increase_list)
+
+    stock_namedtuple = namedtuple('stock', ('riqi', 'price', 'increase'))
+    stock_dict_new = OrderedDict((riqi, stock_namedtuple(riqi, price, increase)) for riqi, price, increase in
+                                 zip(stock_dict.keys(), price_float_list, full_increase_list))
+    print(stock_dict_new)
+
+
+def calc_square():
+    """使用 lambda 匿名函数计算平方数"""
+    square = map(lambda x: x ** 2, [1, 2, 3, 4, 5])
+    print(square, list(square))
 
 
 if __name__ == '__main__':
@@ -82,5 +117,14 @@ if __name__ == '__main__':
     if callable(find_second_max_lambda):
         print(find_second_max_lambda(stock_ordered_dict))
 
+    # 找最大最小收盘价
     if callable(find_max_and_min):
         print(find_max_and_min(stock_ordered_dict))
+
+    # 计算上涨百分比
+    if callable(calc_increase_percent):
+        calc_increase_percent(stock_ordered_dict)
+
+    # 计算平方
+    if callable(calc_square):
+        calc_square()
