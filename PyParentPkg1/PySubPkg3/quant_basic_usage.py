@@ -63,20 +63,20 @@ def calc_increase_percent(stock_dict):
 
     # 也可以调用函数实现，只保留上涨，不计算累计
     print("只保留上涨，不计算累计")
-    data, increase_sum = filter_stock(stock_dict_new)
-    print(list(data))
+    data1, increase_sum = filter_stock(stock_dict_new)
+    print(data1)
     print(increase_sum)
 
     # 也可以调用函数实现，只保留下跌，不计算累计
     print("只保留下跌，不计算累计")
-    data, increase_sum = filter_stock(stock_dict_new, want_up=False)
-    print(list(data))
+    data2, increase_sum = filter_stock(stock_dict_new, want_up=False)
+    print(data2)
     print(increase_sum)
 
     # 也可以调用函数实现，只保留下跌，不计算累计
     print("只保留下跌，要计算累计")
-    data, increase_sum = filter_stock(stock_dict_new, want_up=False, want_calc_sum=True)
-    print(list(data))
+    data3, increase_sum = filter_stock(stock_dict_new, want_up=False, want_calc_sum=True)
+    print(data3)
     print(increase_sum)
 
 
@@ -85,18 +85,21 @@ def filter_stock(stock_array_dict, want_up=True, want_calc_sum=False):
     if not isinstance(stock_array_dict, OrderedDict):
         raise TypeError('stock_array_dict must be OrderedDict!')
 
-    filter_func = (lambda day: day.increase > 0) \
-        if want_up else (lambda day: day.increase < 0)
-    want_days = filter(filter_func, stock_array_dict.values())
+    filter_func = (lambda stock: stock.increase > 0) \
+        if want_up else (lambda stock: stock.increase < 0)
+    want_stock_data = filter(filter_func, stock_array_dict.values())
 
     if not want_calc_sum:
-        return want_days, 0
+        return list(want_stock_data), 0
 
     # 需要计算涨跌幅和
     increase_sum = 0.0
-    for day in want_days:
-        increase_sum += day.increase
-    return want_days, increase_sum
+    dest = list()
+    for stock in want_stock_data:
+        # want_stock_data貌似只能消费一次
+        increase_sum += stock.increase
+        dest.append(stock)
+    return dest, increase_sum
 
 
 def calc_square():
@@ -166,11 +169,6 @@ if __name__ == '__main__':
     # 计算上涨百分比
     if callable(calc_increase_percent):
         calc_increase_percent(stock_ordered_dict)
-
-    # 只需要上涨数据，不计算汇总
-    # if callable(calc_increase_percent):
-    #     data = list(filter_stock(stock_ordered_dict))
-    #     print(data)
 
     # 计算平方
     if callable(calc_square):
