@@ -1,6 +1,9 @@
+from abc import ABCMeta, abstractmethod
 from collections import namedtuple, OrderedDict
 from collections.abc import Iterable
 from functools import reduce
+
+import six
 
 
 class StockTradeDays(object):
@@ -105,6 +108,77 @@ class StockTradeDays(object):
 
     def __len__(self):
         return len(self.stock_dict)
+
+
+class TradeStrategyBase(six.with_metaclass(ABCMeta, object)):
+    """
+    交易策略抽象基类
+    """
+
+    @abstractmethod
+    def buy_strategy(self, *args, **kwargs):
+        """
+        买入策略实现
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+    def sell_strategy(self, *args, **kwargs):
+        """
+        卖出策略
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        pass
+
+
+class TradeStrategy1(TradeStrategyBase):
+    """
+    交易策略1：追涨策略，当股价上涨一个阈值默认为7%时
+    买入股票并持有s_keep_stock_threshold(20)天
+    """
+    s_keep_stock_threshold = 20
+
+    def __init__(self):
+        self.keep_stock_day = 0
+        self.__buy_change_threshold = 0.07
+
+    def buy_strategy(self, trade_ind, trade_day, trade_days):
+        if self.keep_stock_day == 0 and \
+                trade_day.change > self.__buy_change_threshold:
+            # 当没有持有股票的时候self.keep_stock_day==0 并且
+            # 符合买入条件上涨一个阈值，买入
+            self.keep_stock_day += 1
+
+        elif self.keep_stock_day > 0:
+            # self.keep_stock_day>0代表持有股票，持有股票天数递增
+            self.keep_stock_day += 1
+
+    def sell_strategy(self, trade_ind, trade_day, trade_days):
+        if self.keep_stock_day >= \
+                TradeStrategy1.s_keep_stock_threshold:
+            # 当持有股票天数超过阈值s_keep_stock_threshold，卖出股票
+            self.keep_stock_day = 0
+
+    """
+    property属性
+    """
+
+    @property
+    def buy_change_threshold(self):
+        return self.__buy_change_threshold
+
+    @buy_change_threshold.setter
+    def buy_change_threshold(self, buy_change_threshold):
+        if not isinstance(buy_change_threshold, float)
+            """
+            上涨阈值只取小数点后两位
+            """
+            raise TypeError('buy_change_threshold must be float!')
+        self.__buy_change_threshold = round(buy_change_threshold, 2)
 
 
 if __name__ == '__main__':
