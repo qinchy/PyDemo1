@@ -21,31 +21,6 @@ class StockTradeDays(object):
         # 进行OrderedDict组装
         self.stock_dict = self.__init_stock_dict()
 
-    def __init_change(self):
-        """
-        从price_array生成change_array
-        :return:
-        """
-        price_float_array = [float(price_str) for price_str in self.__price_array]
-        # 通过讲时间平移形成两个错开的收盘价序列，通过zip()函数打包成为一个新的序列
-        # 每个元素为响铃的两个收盘价格
-        pp_array = [(price1, price2) for price1, price2 in zip(price_float_array[:-1], price_float_array[1:])]
-        change_array = map(lambda pp: reduce(lambda a, b: round((b - a) / a, 3), pp), pp_array)
-        change_array_list = list(change_array)
-        change_array_list.insert(0, 0)
-
-        return change_array_list
-
-    def __init_stock_dict(self):
-        """
-        使用namedtuple，OrderdDict将结果合并
-        :return:
-        """
-        stock_namedtuple = namedtuple('stock', ('date', 'price', 'change'))
-        stock_dict = OrderedDict((date, stock_namedtuple(date, price, change)) for date, price, change in
-                                 zip(self.__date_array, self.__price_array, self.__change_array))
-        return stock_dict
-
     def _init_days(self, start_date, date_array):
         """
         protect方法，初始化交易日期序列
@@ -60,6 +35,32 @@ class StockTradeDays(object):
             # 稍后的内容会使用外部直接设置的方式
             date_array = [str(date) for date in date_array]
         return date_array
+
+    def __init_change(self):
+        """
+        从price_array生成change_array
+        :return:
+        """
+        price_float_array = [float(price_str) for price_str in self.__price_array]
+        # 通过讲时间平移形成两个错开的收盘价序列，通过zip()函数打包成为一个新的序列
+        # 每个元素为响铃的两个收盘价格
+        pp_array = [(price1, price2) for price1, price2 in zip(price_float_array[:-1], price_float_array[1:])]
+        change_array = map(lambda pp: reduce(lambda price1, price2: round((price2 - price1) / price1, 3), pp), pp_array)
+        change_array_list = list(change_array)
+        # 第一天涨幅设置为0
+        change_array_list.insert(0, 0)
+
+        return change_array_list
+
+    def __init_stock_dict(self):
+        """
+        使用namedtuple，OrderdDict将结果合并
+        :return:
+        """
+        stock_namedtuple = namedtuple('stock', ('date', 'price', 'change'))
+        stock_dict = OrderedDict((date, stock_namedtuple(date, price, change)) for date, price, change in
+                                 zip(self.__date_array, self.__price_array, self.__change_array))
+        return stock_dict
 
     def filter_stock(self, want_up=True, want_calc_sum=False):
         """
@@ -173,12 +174,51 @@ class TradeStrategy1(TradeStrategyBase):
 
     @buy_change_threshold.setter
     def buy_change_threshold(self, buy_change_threshold):
-        if not isinstance(buy_change_threshold, float)
+        if not isinstance(buy_change_threshold, float):
             """
             上涨阈值只取小数点后两位
             """
             raise TypeError('buy_change_threshold must be float!')
         self.__buy_change_threshold = round(buy_change_threshold, 2)
+
+
+class TradeLoopBack(object):
+    """
+    交易回测系统
+    """
+
+    def __init__(self, trade_days, trade_strategy):
+        """
+        使用前面疯转的StockTradeDays类和本章节编写的交易策略类TradeStrategyBase类初始化交易系统
+        :param trade_days:
+        :param trade_strategy:
+        """
+        self.trade_days = trade_days
+        self.trade_strategy = trade_strategy
+        # 交易盈亏结果序列
+        self.profit_array = []
+
+    def execute_trade(self):
+        """
+        执行交易回测
+        """
+        for ind, day in enumerate(self.trade_days):
+            """
+            以时间驱动完成交易回测
+            """
+            if self.trade_strategy.keep_stock_day > 0:
+                # 如果持有股票，加入交易盈亏结果序列
+                self.profit_array.append(day.change)
+
+            # hasattr:用来查询对象有没有实现某个方法
+            if hasattr(self.trade_strategy, 'buy_strategy'):
+                # 买入策略执行
+                self.trade_strategy.buy_strategy(ind, day, self.trade_days)
+
+            # hasattr:用来查询对象有没有实现某个方法
+            if hasattr(self.trade_strategy, 'sell_strategy'):
+                # 买入策略执行
+                self.trade_strategy.sell_strategy(ind, day, self.trade_days)
 
 
 if __name__ == '__main__':
@@ -198,3 +238,10 @@ if __name__ == '__main__':
 
     stock, change_sum = trade_days.filter_stock(want_up=False, want_calc_sum=True)
     print(f'过滤后的数据：{stock}, 累计涨跌：{change_sum}')
+
+    """
+    后面执行回测
+    """
+    trade_loop_back = TradeLoopBack(trade_days, TradeStrategy1())
+    trade_loop_back.execute_trade()
+    print('回测策略1总盈亏:{}%'.format(reduce(lambda a, b: a + b, trade_loop_back.profit_array) * 100))
