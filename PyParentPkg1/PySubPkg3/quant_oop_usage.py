@@ -221,10 +221,16 @@ class TradeStrategy2(TradeStrategyBase):
             # 当持有股票太难书超过阈值s_keep_stock_threshold
             self.keep_stock_day = 0
 
+    """
+    类方法，不需要self参数，但第一个参数需要是标识自身类的cls参数
+    """
     @classmethod
     def set_keep_stock_threshold(cls, keep_stock_threshold):
         cls.s_keep_stock_threshold = keep_stock_threshold
 
+    """
+    静态方法，只能通过直接类名.属性名或类名.方法名调用类中的变量和方法
+    """
     @staticmethod
     def set_buy_change_threshold(buy_change_threshold):
         TradeStrategy2.s_buy_change_threshold = buy_change_threshold
@@ -301,6 +307,13 @@ if __name__ == '__main__':
     """
     价值回归模式
     """
-    trade_loop_back = TradeLoopBack(trade_days, TradeStrategy2())
+    trade_strategy2 = TradeStrategy2();
+    trade_loop_back = TradeLoopBack(trade_days, trade_strategy2)
     trade_loop_back.execute_trade()
     print('回测策略2总盈亏:{}%'.format(reduce(lambda a, b: a + b, trade_loop_back.profit_array) * 100))
+
+    # 下跌20%后买入，持有20天
+    TradeStrategy2.set_buy_change_threshold(float(-0.20))
+    TradeStrategy2.set_keep_stock_threshold(20)
+    trade_loop_back.execute_trade()
+    print('回测策略3总盈亏:{}%'.format(reduce(lambda a, b: a + b, trade_loop_back.profit_array) * 100))
