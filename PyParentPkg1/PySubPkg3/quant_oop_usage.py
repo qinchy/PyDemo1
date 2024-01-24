@@ -224,6 +224,7 @@ class TradeStrategy2(TradeStrategyBase):
     """
     类方法，不需要self参数，但第一个参数需要是标识自身类的cls参数
     """
+
     @classmethod
     def set_keep_stock_threshold(cls, keep_stock_threshold):
         cls.s_keep_stock_threshold = keep_stock_threshold
@@ -231,6 +232,7 @@ class TradeStrategy2(TradeStrategyBase):
     """
     静态方法，只能通过直接类名.属性名或类名.方法名调用类中的变量和方法
     """
+
     @staticmethod
     def set_buy_change_threshold(buy_change_threshold):
         TradeStrategy2.s_buy_change_threshold = buy_change_threshold
@@ -275,6 +277,30 @@ class TradeLoopBack(object):
                 self.trade_strategy.sell_strategy(ind, day, self.trade_days)
 
 
+def calc(keep_stock_threshold, buy_change_threshold):
+    """
+
+    :param keep_stock_threshold:持股天数
+    :param buy_change_threshold:下跌买入阈值
+    :return:
+    """
+    # 实例化交易策略
+    trade_strategy2 = TradeStrategy2()
+    # 通过类方法设置买入后持股天数
+    TradeStrategy2.set_keep_stock_threshold(keep_stock_threshold)
+    # 通过静态方法设置下跌买入阈值
+    TradeStrategy2.set_buy_change_threshold(buy_change_threshold)
+
+    # 进行回测
+    trade_loop_back = TradeLoopBack(trade_days, trade_strategy2)
+
+    trade_loop_back.execute_trade()
+    # 计算回测结果的最终盈亏值profit
+    profit = 0.0 if len(trade_loop_back.profit_array) == 0 else \
+        reduce(lambda a, b: a + b, trade_loop_back.profit_array)
+    return profit, keep_stock_threshold, buy_change_threshold
+
+
 if __name__ == '__main__':
     price_array = '30.14,29.58,26.36,32.56,32.82'.split(',')
     date_base = 20240101
@@ -317,3 +343,8 @@ if __name__ == '__main__':
     TradeStrategy2.set_keep_stock_threshold(20)
     trade_loop_back.execute_trade()
     print('回测策略3总盈亏:{}%'.format(reduce(lambda a, b: a + b, trade_loop_back.profit_array) * 100))
+
+    # 计算最佳盈利及其持股天数和下跌买入阈值
+    print("计算最佳盈利及其持股天数和下跌买入阈值")
+    profit, keep_stock_threshold, buy_change_threshold = calc(20, -0.08)
+    print(f'盈利：{profit},持股天数：{keep_stock_threshold}，下跌买入阈值：{buy_change_threshold}')
