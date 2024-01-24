@@ -1,3 +1,4 @@
+import itertools
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple, OrderedDict
 from collections.abc import Iterable
@@ -348,3 +349,22 @@ if __name__ == '__main__':
     print("计算最佳盈利及其持股天数和下跌买入阈值")
     profit, keep_stock_threshold, buy_change_threshold = calc(20, -0.08)
     print(f'盈利：{profit},持股天数：{keep_stock_threshold}，下跌买入阈值：{buy_change_threshold}')
+
+    # 使用多个持股天数与下跌买入阈值的笛卡尔积来寻求最佳盈利参数
+    # range集合，买入后持股天数从2~30天，间隔2天
+    keep_stock_days_list = range(2, 30, 2)
+    # 下跌买入阈值从-5%到-15%
+    buy_change_list = [buy_change / 100.0 for buy_change in range(-5, -16, -1)]
+    # 存放各种场景的收益数据、持股天数，下跌买入阈值
+    result = []
+    for keep_stock_threshold, buy_change_threshold in itertools.product(keep_stock_days_list, buy_change_list):
+        print(f"持股天数：{keep_stock_threshold}，下跌买入阈值：{buy_change_threshold}")
+        result.append(calc(keep_stock_threshold, buy_change_threshold))
+    print(f"笛卡尔积参数集合总共结果为：{len(result)}个")
+    print(result)
+    # [::-1]将整个结果反转，反转后盈亏收益从最高向低开始排序
+    # [:10]取出收益最高的前10个组合
+    high_profit = sorted(result)[::-1][:10]
+    print("收益最高的10个组合如下")
+    for profit, days, change in high_profit:
+        print(f'收益率：{profit},持股天数：{days},下跌幅度：{change}')
