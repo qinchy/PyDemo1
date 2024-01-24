@@ -170,6 +170,7 @@ class TradeStrategy1(TradeStrategyBase):
 
     @property
     def buy_change_threshold(self):
+        # getter函数
         return self.__buy_change_threshold
 
     @buy_change_threshold.setter
@@ -180,6 +181,53 @@ class TradeStrategy1(TradeStrategyBase):
             """
             raise TypeError('buy_change_threshold must be float!')
         self.__buy_change_threshold = round(buy_change_threshold, 2)
+
+
+class TradeStrategy2(TradeStrategyBase):
+    """
+    交易策略2：均值恢复策略，当股价连续两个交易日下跌
+    且下跌幅度超过阈值默认s_buy_change_threshold(-10%),
+    买入股票并持有s_stock_change_threshold(10)天
+    """
+    # 买入后持有天数
+    s_keep_stock_threshold = 10
+    # 下跌买入阈值
+    s_buy_change_threshold = -0.10
+
+    def __init__(self):
+        self.keep_stock_day = 0
+
+    def buy_strategy(self, trade_ind, trade_day, trade_days):
+        if self.keep_stock_day == 0 and trade_ind >= 1:
+            """
+            当没有持有股票的时候self.keep_stock_day ==0 并且
+            trade_ind>=1,不是交易开似乎的第一天，因为需要yesterday数据
+            """
+        # trade_day.change<0 bool:今天股价是否下跌
+        today_down = trade_day.change < 0
+        yesterday_down = trade_days[trade_ind - 1].change < 0
+        # 两天总跌幅
+        down_rate = trade_day.change + \
+                    trade_days[trade_ind - 1].change
+        if today_down and yesterday_down and down_rate < TradeStrategy2.s_buy_change_threshold:
+            # 买入条件成立，连跌两天，跌幅超过s_buy_change_threshold
+            self.keep_stock_day += 1
+        elif self.keep_stock_day > 0:
+            # self.keep_stock_day>0代表持有股票。持有股票天数递增
+            self.keep_stock_day += 1
+
+    def sell_strategy(self, trade_ind, trade_day, trade_days):
+        if self.keep_stock_day >= TradeStrategy2.s_keep_stock_threshold:
+            # 当持有股票太难书超过阈值s_keep_stock_threshold
+            self.keep_stock_day = 0
+
+    @classmethod
+    def set_keep_stock_threshold(cls, keep_stock_threshold):
+        cls.s_keep_stock_threshold = keep_stock_threshold
+
+    @staticmethod
+    def set_buy_change_threshold(buy_change_threshold):
+        TradeStrategy2.s_buy_change_threshold = buy_change_threshold
 
 
 class TradeLoopBack(object):
@@ -242,6 +290,17 @@ if __name__ == '__main__':
     """
     后面执行回测
     """
+
+    """
+    追涨模式
+    """
     trade_loop_back = TradeLoopBack(trade_days, TradeStrategy1())
     trade_loop_back.execute_trade()
     print('回测策略1总盈亏:{}%'.format(reduce(lambda a, b: a + b, trade_loop_back.profit_array) * 100))
+
+    """
+    价值回归模式
+    """
+    trade_loop_back = TradeLoopBack(trade_days, TradeStrategy2())
+    trade_loop_back.execute_trade()
+    print('回测策略2总盈亏:{}%'.format(reduce(lambda a, b: a + b, trade_loop_back.profit_array) * 100))
