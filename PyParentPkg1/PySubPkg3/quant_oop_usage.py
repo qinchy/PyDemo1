@@ -2,6 +2,7 @@ import itertools
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple, OrderedDict
 from collections.abc import Iterable
+from concurrent.futures import ProcessPoolExecutor
 from functools import reduce
 
 import six
@@ -278,7 +279,7 @@ class TradeLoopBack(object):
                 self.trade_strategy.sell_strategy(ind, day, self.trade_days)
 
 
-def calc(keep_stock_threshold, buy_change_threshold):
+def calc(trade_days, keep_stock_threshold, buy_change_threshold):
     """
 
     :param keep_stock_threshold:持股天数
@@ -302,6 +303,15 @@ def calc(keep_stock_threshold, buy_change_threshold):
     return profit, keep_stock_threshold, buy_change_threshold
 
 
+result = []
+
+
+# 回调函数
+def when_done(r):
+    """多线程时回调函数，通过add_done_callback任务完成后调用"""
+    result.append(r.result())
+
+
 if __name__ == '__main__':
     price_array = '30.14,29.58,26.36,32.56,32.82'.split(',')
     date_base = 20240101
@@ -317,8 +327,8 @@ if __name__ == '__main__':
         for day in trade_days:
             print(day)
 
-    stock, change_sum = trade_days.filter_stock(want_up=False, want_calc_sum=True)
-    print(f'过滤后的数据：{stock}, 累计涨跌：{change_sum}')
+    stockdata, change_sum = trade_days.filter_stock(want_up=False, want_calc_sum=True)
+    print(f'过滤后的数据：{stockdata}, 累计涨跌：{change_sum}')
 
     """
     后面执行回测
@@ -347,7 +357,7 @@ if __name__ == '__main__':
 
     # 计算最佳盈利及其持股天数和下跌买入阈值
     print("计算最佳盈利及其持股天数和下跌买入阈值")
-    profit, keep_stock_threshold, buy_change_threshold = calc(20, -0.08)
+    profit, keep_stock_threshold, buy_change_threshold = calc(trade_days, 20, -0.08)
     print(f'盈利：{profit},持股天数：{keep_stock_threshold}，下跌买入阈值：{buy_change_threshold}')
 
     # 使用多个持股天数与下跌买入阈值的笛卡尔积来寻求最佳盈利参数
@@ -359,7 +369,7 @@ if __name__ == '__main__':
     result = []
     for keep_stock_threshold, buy_change_threshold in itertools.product(keep_stock_days_list, buy_change_list):
         print(f"持股天数：{keep_stock_threshold}，下跌买入阈值：{buy_change_threshold}")
-        result.append(calc(keep_stock_threshold, buy_change_threshold))
+        result.append(calc(trade_days, keep_stock_threshold, buy_change_threshold))
     print(f"笛卡尔积参数集合总共结果为：{len(result)}个")
     print(result)
     # [::-1]将整个结果反转，反转后盈亏收益从最高向低开始排序
@@ -368,3 +378,24 @@ if __name__ == '__main__':
     print("收益最高的10个组合如下")
     for profit, days, change in high_profit:
         print(f'收益率：{profit},持股天数：{days},下跌幅度：{change}')
+
+    print("==================多进程处理  BEGIN==================")
+
+    # range集合，买入后持股天数从2~30天，间隔2天
+    keep_stock_days_list = range(2, 30, 2)
+    # 下跌买入阈值从-5%到-15%
+    buy_change_list = [buy_change / 100.0 for buy_change in range(-5, -16, -1)]
+    with ProcessPoolExecutor() as pool:
+        for keep_stock_threshold, buy_change_threshold in itertools.product(keep_stock_days_list, buy_change_list):
+            print(f"持股天数：{keep_stock_threshold}，下跌买入阈值：{buy_change_threshold}")
+            future_result = pool.submit(calc, trade_days, keep_stock_threshold, buy_change_threshold)
+            future_result.add_done_callback(when_done)
+    print(result)
+    # [::-1]将整个结果反转，反转后盈亏收益从最高向低开始排序
+    # [:10]取出收益最高的前10个组合
+    high_profit = sorted(result)[::-1][:10]
+    print("收益最高的10个组合如下")
+    for profit, days, change in high_profit:
+        print(f'收益率：{profit},持股天数：{days},下跌幅度：{change}')
+
+    print("====================多进程处理 END====================")
